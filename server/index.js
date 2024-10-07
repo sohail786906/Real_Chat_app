@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 8000;
 
 // CORS Configuration
 const corsOptions = {
-  origin: process.env.BASE_URL, // Add multiple origins if needed
+  origin: process.env.BASE_URL, // Ensure this matches your frontend URL
   credentials: true,
 };
 
@@ -30,7 +30,13 @@ app.use('/api/message', messageRoutes);
 
 // MongoDB Connection
 mongoose.set('strictQuery', false);
-mongoDBConnect();
+mongoDBConnect()
+  .then(() => {
+    console.log('MongoDB connected successfully');
+  })
+  .catch((err) => {
+    console.error('MongoDB connection error:', err);
+  });
 
 // Start the Server
 const server = app.listen(PORT, () => {
