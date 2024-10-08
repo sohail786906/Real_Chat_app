@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 8000;
 
 // CORS Configuration
 const corsOptions = {
-  origin: process.env.BASE_URL, // Ensure this matches your frontend URL
+  origin: process.env.BASE_URL, 
   credentials: true,
 };
 
@@ -47,7 +47,7 @@ const server = app.listen(PORT, () => {
 const io = new Server(server, {
   pingTimeout: 60000, // Disconnect after 60 seconds of inactivity
   cors: {
-    origin: process.env.BASE_URL || 'https://real-chat-app-iota.vercel.app/', // Update origin as needed
+    origin: process.env.BASE_URL , // Update origin as needed
     credentials: true,
   },
 });
