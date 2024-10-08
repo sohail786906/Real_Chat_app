@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 8000;
 
 // CORS Configuration
 const corsOptions = {
-  origin: process.env.BASE_URL, 
+  origin: process.env.BASE_URL,
   credentials: true,
 };
 
@@ -32,64 +32,62 @@ app.use('/api/message', messageRoutes);
 mongoose.set('strictQuery', false);
 mongoDBConnect()
   .then(() => {
-    console.log('MongoDB connected successfully');
+    // Start the Server after MongoDB connection is established
+    const server = app.listen(PORT, () => {
+      console.log(`Server running on PORT: ${PORT}`);
+    });
+
+    // Socket.io Setup
+    const io = new Server(server, {
+      pingTimeout: 60000, // Disconnect after 60 seconds of inactivity
+      cors: {
+        origin: process.env.BASE_URL, // Update origin as needed
+        credentials: true,
+      },
+    });
+
+    // Socket.io Events
+    io.on('connection', (socket) => {
+      console.log('A user connected');
+
+      // User Setup
+      socket.on('setup', (userData) => {
+        socket.join(userData.id);
+        socket.emit('connected');
+        console.log(`${userData.id} joined the room`);
+      });
+
+      // Join Room
+      socket.on('join room', (room) => {
+        socket.join(room);
+        console.log(`User joined room: ${room}`);
+      });
+
+      // Typing & Stop Typing Events
+      socket.on('typing', (room) => socket.in(room).emit('typing'));
+      socket.on('stop typing', (room) => socket.in(room).emit('stop typing'));
+
+      // New Message
+      socket.on('new message', (newMessageRecieve) => {
+        const chat = newMessageRecieve.chatId;
+
+        if (!chat.users) {
+          console.error('chat.users is not defined');
+          return;
+        }
+
+        chat.users.forEach((user) => {
+          if (user._id === newMessageRecieve.sender._id) return;
+          socket.in(user._id).emit('message received', newMessageRecieve);
+        });
+      });
+
+      // Disconnect Event
+      socket.on('disconnect', () => {
+        console.log('User disconnected');
+      });
+    });
   })
   .catch((err) => {
     console.error('MongoDB connection error:', err);
   });
-
-// Start the Server
-const server = app.listen(PORT, () => {
-  console.log(`Server running on PORT: ${PORT}`);
-});
-
-// Socket.io Setup
-const io = new Server(server, {
-  pingTimeout: 60000, // Disconnect after 60 seconds of inactivity
-  cors: {
-    origin: process.env.BASE_URL , // Update origin as needed
-    credentials: true,
-  },
-});
-
-// Socket.io Events
-io.on('connection', (socket) => {
-  console.log('A user connected');
-
-  // User Setup
-  socket.on('setup', (userData) => {
-    socket.join(userData.id);
-    socket.emit('connected');
-    console.log(`${userData.id} joined the room`);
-  });
-
-  // Join Room
-  socket.on('join room', (room) => {
-    socket.join(room);
-    console.log(`User joined room: ${room}`);
-  });
-
-  // Typing & Stop Typing Events
-  socket.on('typing', (room) => socket.in(room).emit('typing'));
-  socket.on('stop typing', (room) => socket.in(room).emit('stop typing'));
-
-  // New Message
-  socket.on('new message', (newMessageRecieve) => {
-    const chat = newMessageRecieve.chatId;
-
-    if (!chat.users) {
-      console.error('chat.users is not defined');
-      return;
-    }
-
-    chat.users.forEach((user) => {
-      if (user._id === newMessageRecieve.sender._id) return;
-      socket.in(user._id).emit('message received', newMessageRecieve);
-    });
-  });
-
-  // Disconnect Event
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
-});
