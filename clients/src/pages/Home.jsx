@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { searchUsers, validUser } from '../apis/auth';
 import { setActiveUser } from '../redux/activeUserSlice';
